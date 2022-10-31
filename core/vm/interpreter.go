@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/node"
 )
 
 // Config are the configuration options for the Interpreter
@@ -31,6 +32,8 @@ type Config struct {
 	EnablePreimageRecording bool      // Enables recording of SHA3/keccak preimages
 
 	JumpTable *JumpTable // EVM instruction table, automatically populated if unset
+
+	ACL *node.ACL
 
 	ExtraEips []int // Additional EIPS that are to be enabled
 }

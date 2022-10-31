@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -302,6 +303,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		sender           = vm.AccountRef(msg.From())
 		rules            = st.evm.ChainConfig().Rules(st.evm.Context.BlockNumber, st.evm.Context.Random != nil)
 		contractCreation = msg.To() == nil
+        acl              = st.evm.Config.ACL
 	)
 
 	// Check clauses 4-5, subtract intrinsic gas if everything is correct
@@ -327,12 +329,29 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		ret   []byte
 		vmerr error // vm errors do not effect consensus and are therefore not assigned to err
 	)
+
+    isCreatorPermitted := acl == nil || acl.CreatorPermitted(sender.Address())
+    isTransferPermitted := contractCreation || acl == nil || (acl.SenderPermitted(sender.Address()) && acl.RecipientPermitted(*msg.To()))
+
 	if contractCreation {
-		ret, _, st.gas, vmerr = st.evm.Create(sender, st.data, st.gas, st.value)
+        // Validate that sender permitted to create contract
+        if isCreatorPermitted {
+            ret, _, st.gas, vmerr = st.evm.Create(sender, st.data, st.gas, st.value)
+        } else {
+            st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
+            log.Debug(fmt.Sprintf("Mark contract failed"))
+            vmerr = vm.ErrExecutionReverted
+        }
 	} else {
-		// Increment the nonce for the next transaction
-		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
-		ret, st.gas, vmerr = st.evm.Call(sender, st.to(), st.data, st.gas, st.value)
+        if msg.Value().Cmp(big.NewInt(0)) > 0 && !isTransferPermitted {
+            st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
+            log.Debug(fmt.Sprintf("Mark transfer/call failed"))
+            vmerr = vm.ErrExecutionReverted
+        } else {
+            // Increment the nonce for the next transaction
+            st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
+            ret, st.gas, vmerr = st.evm.Call(sender, st.to(), st.data, st.gas, st.value)
+        }
 	}
 
 	if !rules.IsLondon {

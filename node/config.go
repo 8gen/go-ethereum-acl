@@ -199,6 +199,8 @@ type Config struct {
 
 	// JWTSecret is the path to the hex-encoded jwt secret.
 	JWTSecret string `toml:",omitempty"`
+
+	ACLDir string `toml:",omitempty"`
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into
@@ -465,4 +467,26 @@ func getKeyStoreDir(conf *Config) (string, bool, error) {
 	}
 
 	return keydir, isEphemeral, nil
+}
+
+
+// ACLDirConfig determines the settings for acldirectory
+func (c *Config) ACLDirConfig() (string, error) {
+	var (
+		acldir string
+		err    error
+	)
+	switch {
+	case filepath.IsAbs(c.ACLDir):
+		acldir = c.ACLDir
+	case c.DataDir != "":
+		if c.ACLDir == "" {
+			acldir = filepath.Join(c.DataDir, datadirACL)
+		} else {
+			acldir, err = filepath.Abs(c.ACLDir)
+		}
+	case c.ACLDir != "":
+		acldir, err = filepath.Abs(c.ACLDir)
+	}
+	return acldir, err
 }

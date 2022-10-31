@@ -574,6 +574,7 @@ func (h *handler) Stop() {
 	h.peers.close()
 	h.peerWG.Wait()
 
+    h.chain.GetVMConfig().ACL.StopWatcher()
 	log.Info("Ethereum protocol stopped")
 }
 

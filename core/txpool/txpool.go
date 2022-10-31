@@ -31,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
@@ -58,6 +59,9 @@ var (
 	// ErrAlreadyKnown is returned if the transactions is already contained
 	// within the pool.
 	ErrAlreadyKnown = errors.New("already known")
+
+	// ErrInvalidSender is returned if the transaction contains an invalid signature.
+	ErrInvalidRecipient = errors.New("invalid recipient")
 
 	// ErrInvalidSender is returned if the transaction contains an invalid signature.
 	ErrInvalidSender = errors.New("invalid sender")
@@ -144,6 +148,7 @@ const (
 // blockChain provides the state of blockchain and current gas limit to do
 // some pre checks in tx pool and event subscribers.
 type blockChain interface {
+    GetVMConfig() *vm.Config
 	CurrentBlock() *types.Block
 	GetBlock(hash common.Hash, number uint64) *types.Block
 	StateAt(root common.Hash) (*state.StateDB, error)
@@ -644,6 +649,19 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if tx.Gas() < intrGas {
 		return core.ErrIntrinsicGas
 	}
+
+    // acl := pool.chain.GetVMConfig().ACL
+    // // Validate the sender permitted by ACL
+    // // Pass if list is empty or list has sender
+    // if !acl.SenderPermitted(from) {
+    //     return ErrInvalidSender
+    // }
+    // // Validate the recipient permitted by ACL
+    // // Pass if list is empty or list has recipient 
+    // if tx.To() != nil && tx.Value().Int64() > 0 && !acl.RecipientPermitted(*tx.To()) {
+    //     return ErrInvalidRecipient
+    // }
+
 	return nil
 }
 

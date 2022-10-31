@@ -65,6 +65,8 @@ type Node struct {
 	inprocHandler *rpc.Server // In-process RPC request handler to process the API requests
 
 	databases map[*closeTrackingDB]struct{} // All open databases
+
+    acl           *ACL
 }
 
 const (
@@ -109,6 +111,7 @@ func New(conf *Config) (*Node, error) {
 		log:           conf.Logger,
 		stop:          make(chan struct{}),
 		server:        &p2p.Server{Config: conf.P2P},
+        acl:           NewACL(conf),
 		databases:     make(map[*closeTrackingDB]struct{}),
 	}
 
@@ -522,6 +525,11 @@ func (n *Node) startInProc() error {
 // stopInProc terminates the in-process RPC endpoint.
 func (n *Node) stopInProc() {
 	n.inprocHandler.Stop()
+}
+
+
+func (n *Node) ACL() *ACL {
+    return n.acl
 }
 
 // Wait blocks until the node is closed.
