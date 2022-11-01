@@ -110,7 +110,7 @@ func (acl *ACL) readFile(name string, current_addrs *[]string) {
     scanner := bufio.NewScanner(file)
     // optionally, resize scanner's capacity for lines over 64K, see next example
     for scanner.Scan() {
-        addr := scanner.Text()
+        addr := strings.ToLower(scanner.Text())
         if len(addr) != 42 {
             log.Debug(fmt.Sprintf("During import from %s found wrong address: %s (%d)", name, addr, len(addr)))
         } else {
