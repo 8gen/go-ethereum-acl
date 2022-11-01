@@ -118,7 +118,7 @@ func (acl *ACL) readFile(name string, current_addrs *[]string) {
     sort.Strings(addrs)
 
     if !reflect.DeepEqual(addrs, *current_addrs) {
-        log.Debug(fmt.Sprintf("Refresh addresses from: %s, values: %d", name, len(addrs)))
+        log.Debug(fmt.Sprintf("Refresh addresses from: %s, values: %#v", name, addrs))
         *current_addrs = addrs
     }
 }
@@ -152,16 +152,18 @@ func (acl *ACL) StopWatcher() {
 
 func (acl *ACL) isPermitted(role Role, address common.Address) bool {
     addrs := acl.permitted(role)
-    log.Debug(fmt.Sprintf("Check is %s permitted for %v", address, role))
+    addr := strings.ToLower(address.Hex())
+    flag := false;
     if len(addrs) == 0 {
-        return true
+        flag = true
     }
     for i := 0; i < len(addrs); i++ {
-        if addrs[i] == strings.ToLower(address.Hex()) {
-            return true
+        if addrs[i] == addr {
+            flag = true
         }
     }
-    return false
+    log.Debug(fmt.Sprintf("Check is %s permitted for %s - %v", addr, role.GoString(), flag))
+    return flag
 }
 
 // Is sender permitted?
