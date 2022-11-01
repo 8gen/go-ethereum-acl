@@ -153,11 +153,11 @@ func (acl *ACL) StopWatcher() {
     acl.done <- true
 }
 
-func (acl *ACL) isPermitted(role Role, address common.Address) bool {
+func (acl *ACL) isPermitted(role Role, address common.Address, strict bool) bool {
     addrs := acl.permitted(role)
     addr := strings.ToLower(address.Hex())
     flag := false;
-    if len(addrs) == 0 {
+    if len(addrs) == 0 && strict == false {
         flag = true
     }
     for i := 0; i < len(addrs); i++ {
@@ -171,15 +171,20 @@ func (acl *ACL) isPermitted(role Role, address common.Address) bool {
 
 // Is sender permitted?
 func (acl *ACL) SenderPermitted(address common.Address) bool {
-    return acl.isPermitted(Sender, address)
+    return acl.isPermitted(Sender, address, false)
 }
 
 // Is recipients permitted?
 func (acl *ACL) RecipientPermitted(address common.Address) bool {
-    return acl.isPermitted(Recipient, address)
+    return acl.isPermitted(Recipient, address, false)
+}
+
+// Is recipients or sender permitted?
+func (acl *ACL) TransferPermitted(from common.Address, to common.Address) bool {
+    return acl.isPermitted(Sender, from, true) || acl.isPermitted(Recipient, to, true)
 }
 
 // Is creator permitted?
 func (acl *ACL) CreatorPermitted(address common.Address) bool {
-    return acl.isPermitted(Creator, address)
+    return acl.isPermitted(Creator, address, false)
 }

@@ -650,17 +650,18 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return core.ErrIntrinsicGas
 	}
 
-    // acl := pool.chain.GetVMConfig().ACL
-    // // Validate the sender permitted by ACL
-    // // Pass if list is empty or list has sender
-    // if !acl.SenderPermitted(from) {
-    //     return ErrInvalidSender
-    // }
-    // // Validate the recipient permitted by ACL
-    // // Pass if list is empty or list has recipient 
-    // if tx.To() != nil && tx.Value().Int64() > 0 && !acl.RecipientPermitted(*tx.To()) {
-    //     return ErrInvalidRecipient
-    // }
+    acl := pool.chain.GetVMConfig().ACL
+    if acl != nil {
+        if tx.To() != nil {
+            if tx.Value().Int64() > 0 && (!acl.RecipientPermitted(*tx.To()) && !acl.SenderPermitted(from)) {
+                return ErrInvalidSender
+            }
+        } else {
+            if !acl.CreatorPermitted(from) {
+                return ErrInvalidSender
+            }
+        }
+    }
 
 	return nil
 }
