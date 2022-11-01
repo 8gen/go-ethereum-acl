@@ -330,11 +330,10 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		vmerr error // vm errors do not effect consensus and are therefore not assigned to err
 	)
 
-    isCreatorPermitted := acl == nil || acl.CreatorPermitted(sender.Address())
-    isTransferPermitted := contractCreation || acl == nil || (acl.SenderPermitted(sender.Address()) && acl.RecipientPermitted(*msg.To()))
 
 	if contractCreation {
         // Validate that sender permitted to create contract
+        isCreatorPermitted := acl == nil || acl.CreatorPermitted(sender.Address())
         if isCreatorPermitted {
             ret, _, st.gas, vmerr = st.evm.Create(sender, st.data, st.gas, st.value)
         } else {
@@ -343,6 +342,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
             vmerr = vm.ErrExecutionReverted
         }
 	} else {
+        isTransferPermitted := contractCreation || acl == nil || (acl.SenderPermitted(sender.Address()) || acl.RecipientPermitted(*msg.To()))
         if msg.Value().Cmp(big.NewInt(0)) > 0 && !isTransferPermitted {
             st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
             log.Debug(fmt.Sprintf("Mark transfer/call failed"))
