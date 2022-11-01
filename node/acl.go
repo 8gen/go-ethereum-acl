@@ -111,8 +111,11 @@ func (acl *ACL) readFile(name string, current_addrs *[]string) {
     // optionally, resize scanner's capacity for lines over 64K, see next example
     for scanner.Scan() {
         addr := scanner.Text()
-        // TODO: validate addr
-        addrs = append(addrs, addr)
+        if len(addr) != 42 {
+            log.Debug(fmt.Sprintf("During import from %s found wrong address: %s (%d)", name, addr, len(addr)))
+        } else {
+            addrs = append(addrs, addr)
+        }
     }
 
     sort.Strings(addrs)
